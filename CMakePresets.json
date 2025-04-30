@@ -43,6 +43,26 @@
                     "value": "${sourceDir}/cspice/lib/cspice.a"
                 }
             }
+        },
+        {
+            "name": "osx-configure",
+            "displayName": "osx Configure",
+            "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_C_COMPILER": "/usr/bin/gcc",
+                "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CSPICE_INCLUDE_DIR": {
+                    "type": "FILEPATH",
+                    "value": "${sourceDir}/cspice/include"
+                },
+                "CSPICE_LIBRARY_RELEASE": {
+                    "type": "FILEPATH",
+                    "value": "${sourceDir}/cspice/lib/cspice.a"
+                }
+            }
         }
     ],
     "buildPresets": [
@@ -53,6 +73,10 @@
         {
             "name": "linux-build",
             "configurePreset": "linux-configure"
+        },
+        {
+            "name": "osx-build",
+            "configurePreset": "osx-configure"
         }
     ]
 }
