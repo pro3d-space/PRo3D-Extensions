@@ -129,8 +129,17 @@ jobs:
         -S ${{ github.workspace }}
 
     - name: CMake Build
-      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target install
+      # Build all targets (libraries + tests). Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+    - name: CMake Test
+      # Runs CTest, including the CSpice re-export test which links only against
+      # the shared cspice lib and thus verifies the SPICE entry points are exported.
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: ctest --build-config ${{ matrix.build_type }} --output-on-failure
+
+    - name: CMake Install
+      run: cmake --install ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
 #    # todo: upload build results
 #    - name: Publish
