@@ -12,10 +12,29 @@ set_target_properties(CSpice PROPERTIES OUTPUT_NAME cspice C_STANDARD 11)
 target_include_directories(CSpice PRIVATE ${CSPICE_INCLUDE_DIR})
 
 if(MSVC)
-    # /WHOLEARCHIVE pulls in every object; WINDOWS_EXPORT_ALL_SYMBOLS exports them.
-    set_target_properties(CSpice PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    # /WHOLEARCHIVE pulls every object into the DLL. WINDOWS_EXPORT_ALL_SYMBOLS
+    # cannot export symbols originating from a static library, so instead we
+    # generate a .def export list from cspice.lib and link with /DEF.
+    set(_cspice_def "${CMAKE_CURRENT_BINARY_DIR}/cspice_exports.def")
+    add_custom_command(
+        OUTPUT "${_cspice_def}"
+        COMMAND "${CMAKE_COMMAND}"
+                "-DCSPICE_LIB=${CSPICE_LIBRARY_RELEASE}"
+                "-DDEF_OUT=${_cspice_def}"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/GenerateCSpiceDef.cmake"
+        DEPENDS "${CSPICE_LIBRARY_RELEASE}" "${CMAKE_CURRENT_SOURCE_DIR}/GenerateCSpiceDef.cmake"
+        VERBATIM
+        COMMENT "Generating cspice_exports.def from ${CSPICE_LIBRARY_RELEASE}")
+    add_custom_target(CSpiceDef DEPENDS "${_cspice_def}")
+    add_dependencies(CSpice CSpiceDef)
+
+    # The global CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS is on; turn it off here so it
+    # does not conflict with our explicit /DEF.
+    set_target_properties(CSpice PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS OFF)
     target_link_libraries(CSpice PRIVATE ${CSPICE_LIBRARY_RELEASE})
-    target_link_options(CSpice PRIVATE "/WHOLEARCHIVE:${CSPICE_LIBRARY_RELEASE}")
+    target_link_options(CSpice PRIVATE
+        "/WHOLEARCHIVE:${CSPICE_LIBRARY_RELEASE}"
+        "/DEF:${_cspice_def}")
 elseif(APPLE)
     # -force_load includes the whole archive; symbols keep default visibility.
     target_link_options(CSpice PRIVATE "-Wl,-force_load,${CSPICE_LIBRARY_RELEASE}")
