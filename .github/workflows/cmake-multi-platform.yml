@@ -23,7 +23,7 @@ jobs:
       matrix:
         # os: [ubuntu-latest, windows-latest, macos-latest]
 #        os: [ubuntu-latest, windows-latest]
-        os: [macos-13, ubuntu-latest, windows-latest]
+        os: [macos-15-intel, macos-15, ubuntu-latest, windows-latest]
         build_type: [Release]
         # c_compiler: [gcc, clang, cl]
         c_compiler: [gcc, cl, clang]
@@ -53,11 +53,18 @@ jobs:
 #            spice_dl_url: https://naif.jpl.nasa.gov/pub/naif/toolkit//C/MacM1_OSX_clang_64bit/packages/cspice.tar.Z
 #            spice_zip_filename: cspice.tar.Z
 #            spice_lib_filename: cspice.a
-          - os: macos-13
+          - os: macos-15-intel
             c_compiler: gcc
             cpp_compiler: g++
             arch: x64
             spice_dl_url: https://naif.jpl.nasa.gov/pub/naif/toolkit//C/MacIntel_OSX_AppleC_64bit/packages/cspice.tar.Z
+            spice_zip_filename: cspice.tar.Z
+            spice_lib_filename: cspice.a
+          - os: macos-15
+            c_compiler: clang
+            cpp_compiler: clang++
+            arch: arm64
+            spice_dl_url: https://naif.jpl.nasa.gov/pub/naif/toolkit//C/MacM1_OSX_clang_64bit/packages/cspice.tar.Z
             spice_zip_filename: cspice.tar.Z
             spice_lib_filename: cspice.a
         exclude:
@@ -67,10 +74,14 @@ jobs:
             c_compiler: clang
           - os: ubuntu-latest
             c_compiler: cl
-          - os: macos-13
+          - os: macos-15-intel
             c_compiler: cl
-          - os: macos-13
+          - os: macos-15-intel
             c_compiler: clang
+          - os: macos-15
+            c_compiler: cl
+          - os: macos-15
+            c_compiler: gcc
 
     runs-on: ${{ matrix.os }}
 
@@ -93,7 +104,7 @@ jobs:
     - if: matrix.os == 'ubuntu-latest'
       run: tar -xf "${{ github.workspace }}/${{ matrix.spice_zip_filename }}" && rm "${{ github.workspace }}/${{ matrix.spice_zip_filename }}"
     
-    - if: matrix.os == 'macos-13'
+    - if: matrix.os == 'macos-15-intel' || matrix.os == 'macos-15'
       run: tar -xf "${{ github.workspace }}/${{ matrix.spice_zip_filename }}" && rm "${{ github.workspace }}/${{ matrix.spice_zip_filename }}"
 
     - name: Set reusable strings
