@@ -27,11 +27,14 @@ string(REPLACE "\r" "" _dump "${_dump}")
 string(REPLACE "\n" ";" _lines "${_dump}")
 
 # Data lines look like:  "        0000003C    tkvrsn_c"
+# Export only the documented CSPICE C API (the *_c entry points). This is the
+# surface managed consumers P/Invoke and avoids exporting f2c-internal symbols
+# (e.g. "mode", "size") that are not real linkable definitions.
 set(_symbols "")
 foreach(_line IN LISTS _lines)
     if(_line MATCHES "^[ \t]*[0-9A-Fa-f]+[ \t]+([A-Za-z_][A-Za-z0-9_]*)[ \t]*$")
         set(_name "${CMAKE_MATCH_1}")
-        if(NOT _name MATCHES "^__")  # skip compiler/CRT-internal symbols
+        if(_name MATCHES "_c$")
             list(APPEND _symbols "${_name}")
         endif()
     endif()
