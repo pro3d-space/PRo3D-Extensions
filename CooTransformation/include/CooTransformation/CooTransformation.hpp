@@ -15,6 +15,12 @@
     - added UnloadSpiceKernel().
     - GetPositionTransformationMatrix() now resets CSPICE's sticky error state on
       failure instead of leaking it into subsequent, unrelated calls.
+* 7:
+    - DeInit() now actually unloads all loaded SPICE kernels (calls kclear_c()),
+      instead of only closing the log file. Previously kernels accumulated for
+      the life of the process no matter how many times Init()/DeInit() ran.
+    - Init()'s log file is now truncated instead of appended once it exceeds
+      ~20 MB, instead of growing without bound for the life of an install.
 */
 
 extern "C"
@@ -50,7 +56,8 @@ extern "C"
     int Init(bool bConsoleLog, const char *pcLogFile, int nConsoleLogLevel, int nFileLogLevel);
 
     /**
-     * @brief Flush log messages and close the log file.
+     * @brief Unload all loaded SPICE kernels, reset CSPICE to a pristine state,
+     * flush log messages and close the log file.
      */
     JR_PRO3D_EXTENSIONS_COOTRANSFORMATION_EXPORT
     void DeInit();

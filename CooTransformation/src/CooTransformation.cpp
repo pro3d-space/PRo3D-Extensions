@@ -139,7 +139,7 @@ unsigned int GetAPIVersion()
 {
     Log(LogLevel::TRACE, "GetAPIVersion() called.");
     Log(LogLevel::TRACE, "GetAPIVersion() finished.");
-    return 6;
+    return 7;
 }
 
 
@@ -177,7 +177,16 @@ int Init(bool bConsoleLog, const char* pcLogFile, int nConsoleLogLevel, int nFil
         std::string sLogFile = pcLogFile;
         if(!sLogFile.empty())
         {
-            s_logfile = std::make_unique<std::ofstream>(std::ofstream(sLogFile, std::ios::out|std::ios::app));
+            // The same fixed log path is reused (and appended to) across every
+            // process launch for the lifetime of an install, with no rotation --
+            // left unbounded this has been observed to grow to tens of GB over
+            // time. Cap it: once it's already past a threshold, start fresh
+            // instead of appending onto it forever.
+            constexpr long long MAX_LOG_FILE_SIZE_BYTES = 20LL * 1024 * 1024;
+            struct stat statBuf;
+            bool bTruncate = (stat(sLogFile.c_str(), &statBuf) == 0 && statBuf.st_size > MAX_LOG_FILE_SIZE_BYTES);
+            auto openMode = std::ios::out | (bTruncate ? std::ios::trunc : std::ios::app);
+            s_logfile = std::make_unique<std::ofstream>(std::ofstream(sLogFile, openMode));
             if(s_logfile->is_open())
             {
                 Log(LogLevel::DEBUG, "Initialized log file: \"" + sLogFile + "\"");
@@ -272,6 +281,12 @@ int UnloadSpiceKernel(const char* pcKernelPath)
 JR_PRO3D_EXTENSIONS_COOTRANSFORMATION_EXPORT
 void DeInit()
 {
+    // Previously a no-op beyond closing the log file: kernels loaded via
+    // AddSpiceKernel/furnsh_c were never released, so they accumulated for the
+    // life of the process no matter how many times Init()/DeInit() ran.
+    // kclear_c() unloads everything and resets CSPICE to a pristine state.
+    kclear_c();
+    Log(LogLevel::TRACE, "DeInit() cleared all loaded SPICE kernels.");
     s_logfile.reset();
 }
 
