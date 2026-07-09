@@ -139,7 +139,7 @@ unsigned int GetAPIVersion()
 {
     Log(LogLevel::TRACE, "GetAPIVersion() called.");
     Log(LogLevel::TRACE, "GetAPIVersion() finished.");
-    return 5;
+    return 6;
 }
 
 
@@ -235,6 +235,36 @@ int AddSpiceKernel(const char* pcKernelPath)
     }
 
     Log(LogLevel::TRACE, "AddSpiceKernel() finished.");
+    return 0;
+}
+
+
+JR_PRO3D_EXTENSIONS_COOTRANSFORMATION_EXPORT
+int UnloadSpiceKernel(const char* pcKernelPath)
+{
+    if( !pcKernelPath )
+    {
+        Log(LogLevel::ERROR, "UnloadSpiceKernel() called with nullptr arguments." );
+        return -1;
+    }
+
+    std::string sPath = pcKernelPath;
+
+    Log(LogLevel::TRACE, "UnloadSpiceKernel() called with spice kernel path = \"" + sPath + "\".");
+    unload_c(sPath.c_str());
+    if (SpiceHasFailed())
+    {
+        char acSMsg[SPICE_ERROR_LMSGLN]; // short message
+        char acXMsg[SPICE_ERROR_LMSGLN]; // explanation of short message
+        getmsg_c("SHORT", SPICE_ERROR_LMSGLN, acSMsg);
+        getmsg_c("EXPLAIN", SPICE_ERROR_LMSGLN, acXMsg);
+        reset_c();
+        Log(LogLevel::WARNING,
+            "Could not unload CSPICE kernel: \"" + sPath + "\" (" + acSMsg + ": " + acXMsg + ")!");
+        return -2;
+    }
+
+    Log(LogLevel::TRACE, "UnloadSpiceKernel() finished.");
     return 0;
 }
 
@@ -560,6 +590,17 @@ int GetPositionTransformationMatrix(
 
     double dTmp[3][3];
     pxform_c( pcFrom, pcTo, dEt, dTmp);
+    if (SpiceHasFailed())
+    {
+        char acSMsg[SPICE_ERROR_LMSGLN]; // short message
+        char acXMsg[SPICE_ERROR_LMSGLN]; // explanation of short message
+        getmsg_c("SHORT", SPICE_ERROR_LMSGLN, acSMsg);
+        getmsg_c("EXPLAIN", SPICE_ERROR_LMSGLN, acXMsg);
+        reset_c();
+        Log(LogLevel::WARNING,
+            std::string("GetPositionTransformationMatrix() failed to transform from \"") + pcFrom + "\" to \"" + pcTo + "\" (" + acSMsg + ": " + acXMsg + ")!");
+        return -3;
+    }
 
     // reshape:
     pdRotMat[0] = dTmp[0][0];

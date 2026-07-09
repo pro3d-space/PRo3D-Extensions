@@ -11,6 +11,10 @@
 *   - baseline
 * 5:
     - introduced error code -1 (=illegal nullptr arguments) for most functions.
+* 6:
+    - added UnloadSpiceKernel().
+    - GetPositionTransformationMatrix() now resets CSPICE's sticky error state on
+      failure instead of leaking it into subsequent, unrelated calls.
 */
 
 extern "C"
@@ -62,6 +66,20 @@ extern "C"
      */
     JR_PRO3D_EXTENSIONS_COOTRANSFORMATION_EXPORT
     int AddSpiceKernel(const char *pcSpiceKernelFile);
+
+    /**
+     * @brief Unload a previously loaded SPICE kernel.
+     *
+     * If the kernel is a meta-kernel, this unloads everything that meta-kernel
+     * caused to be loaded too, per CSPICE's unload_c semantics.
+     * @param[in] pcSpiceKernelFile Path to the kernel file, exactly as passed to AddSpiceKernel.
+     * @return
+     *  0   Success
+     * -1   Failed to run function. Argument(s) must not be NULL.
+     * -2   Failed to unload the kernel
+     */
+    JR_PRO3D_EXTENSIONS_COOTRANSFORMATION_EXPORT
+    int UnloadSpiceKernel(const char *pcSpiceKernelFile);
 
     /**
      * @brief Transform planet-centered cartesian coordinates to spherical coordinates.
@@ -160,6 +178,7 @@ extern "C"
      *  0   Success
      * -1   Failed to run function. Argument(s) must not be NULL.
      * -2   Failed to convert datetime string format
+     * -3   Failed to compute the transformation (e.g. no frame data for the given epoch)
      */
     JR_PRO3D_EXTENSIONS_COOTRANSFORMATION_EXPORT
     int GetPositionTransformationMatrix(
